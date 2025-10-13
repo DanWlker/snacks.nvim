@@ -737,6 +737,7 @@ M.lsp_symbols = {
   finder = "lsp_symbols",
   format = "lsp_symbol",
   tree = true,
+  flatten = false,
   filter = {
     default = {
       "Class",
