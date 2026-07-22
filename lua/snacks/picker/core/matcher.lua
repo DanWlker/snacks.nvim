@@ -95,17 +95,27 @@ function M:on_match(picker, item)
 
   local parent = item.parent
   item.child_match_only = false
+  if not parent then
+    return
+  end
+  -- Collect the ancestor chain bottom-up (nearest parent first), stopping at
+  -- the first ancestor that was already added for this tick.
+  local parents = {} ---@type snacks.picker.Item[]
   while parent and not parent.root do
     if parent.score == 0 or parent.match_tick ~= self.tick then
       parent.score = 1
       parent.child_match_only = true
       parent.match_tick = self.tick
       parent.match_topk = nil
-      picker.list:add(parent, self.sorting)
+      parents[#parents + 1] = parent
     else
       break
     end
     parent = parent.parent
+  end
+  -- Add ancestors top-down so the parents keep their tree order (root-most first).
+  for i = #parents, 1, -1 do
+    picker.list:add(parents[i], self.sorting)
   end
 end
 
