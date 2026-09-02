@@ -64,6 +64,9 @@ local defaults = {
     only_current = false,
     priority = 200,
     hl = "SnacksIndentChunk", ---@type string|string[] hl group for chunk scopes
+    -- hl group for chunk scopes that contain a treesitter syntax error.
+    -- only applies to treesitter-based scopes. set to `false` to always use `hl`.
+    error_hl = "SnacksIndentChunkError", ---@type string|string[]|false
     char = {
       corner_top = "┌",
       corner_bottom = "└",
@@ -107,6 +110,7 @@ Snacks.util.set_hl({
   Blank = "SnacksIndent",
   Scope = "Special",
   Chunk = "SnacksIndentScope",
+  ChunkError = "DiagnosticError",
   ["1"] = "DiagnosticInfo",
   ["2"] = "DiagnosticHint",
   ["3"] = "DiagnosticWarn",
@@ -348,6 +352,20 @@ function M.render_scope(scope, state)
   end
 end
 
+--- Check if the scope contains a treesitter syntax error.
+--- Indent-based scopes have no node and never report errors.
+---@param scope snacks.indent.Scope
+---@return boolean
+local function has_error(scope)
+  local node = (scope --[[@as snacks.scope.TSScope]]).node
+  if not node then
+    return false
+  end
+  -- the node can belong to an outdated tree, so guard against it being invalid
+  local ok, ret = pcall(node.has_error, node)
+  return ok and ret or false
+end
+
 --- Render the scope overlappping the given range
 ---@param scope snacks.indent.Scope
 ---@param state snacks.indent.State
@@ -359,7 +377,8 @@ function M.render_chunk(scope, state)
     return
   end
   local from, to = bounds(scope, state)
-  local hl = get_hl(math.floor(scope.indent / state.shiftwidth) + 1, config.chunk.hl)
+  local chunk_hl = config.chunk.error_hl and has_error(scope) and config.chunk.error_hl or config.chunk.hl
+  local hl = get_hl(math.floor(scope.indent / state.shiftwidth) + 1, chunk_hl)
   local char = config.chunk.char
 
   ---@param l number

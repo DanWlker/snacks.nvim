@@ -88,6 +88,9 @@ Similar plugins:
     only_current = false,
     priority = 200,
     hl = "SnacksIndentChunk", ---@type string|string[] hl group for chunk scopes
+    -- hl group for chunk scopes that contain a treesitter syntax error.
+    -- only applies to treesitter-based scopes. set to `false` to always use `hl`.
+    error_hl = "SnacksIndentChunkError", ---@type string|string[]|false
     char = {
       corner_top = "┌",
       corner_bottom = "└",
