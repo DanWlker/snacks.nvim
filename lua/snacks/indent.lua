@@ -307,13 +307,30 @@ local function bounds(scope, state)
   return from, to
 end
 
+--- Check if the scope contains a treesitter syntax error.
+--- Indent-based scopes have no node and never report errors.
+---@param scope snacks.indent.Scope
+---@return boolean
+local function has_error(scope)
+  local node = (scope --[[@as snacks.scope.TSScope]]).node
+  if not node then
+    return false
+  end
+  -- the node can belong to an outdated tree, so guard against it being invalid
+  local ok, ret = pcall(node.has_error, node)
+  return ok and ret or false
+end
+
 --- Render the scope overlapping the given range
 ---@param scope snacks.indent.Scope
 ---@param state snacks.indent.State
 ---@private
 function M.render_scope(scope, state)
   local indent = (scope.indent or 2)
-  local hl = get_hl(math.floor(scope.indent / state.shiftwidth) + 1, config.scope.hl)
+  -- in chunk mode the top-level scope is rendered as a scope, but is still a chunk to the user
+  local scope_hl = config.chunk.enabled and config.chunk.error_hl and has_error(scope) and config.chunk.error_hl
+    or config.scope.hl
+  local hl = get_hl(math.floor(scope.indent / state.shiftwidth) + 1, scope_hl)
   local from, to = bounds(scope, state)
   local col = indent - state.leftcol
 
@@ -350,20 +367,6 @@ function M.render_scope(scope, state)
       })
     end
   end
-end
-
---- Check if the scope contains a treesitter syntax error.
---- Indent-based scopes have no node and never report errors.
----@param scope snacks.indent.Scope
----@return boolean
-local function has_error(scope)
-  local node = (scope --[[@as snacks.scope.TSScope]]).node
-  if not node then
-    return false
-  end
-  -- the node can belong to an outdated tree, so guard against it being invalid
-  local ok, ret = pcall(node.has_error, node)
-  return ok and ret or false
 end
 
 --- Render the scope overlappping the given range
