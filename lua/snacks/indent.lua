@@ -327,10 +327,12 @@ end
 ---@private
 function M.render_scope(scope, state)
   local indent = (scope.indent or 2)
-  -- in chunk mode the top-level scope is rendered as a scope, but is still a chunk to the user
-  local scope_hl = config.chunk.enabled and config.chunk.error_hl and has_error(scope) and config.chunk.error_hl
+  -- in chunk mode the top-level scope is rendered as a scope, but is still a chunk to the user.
+  -- only applies when chunks are actually rendered for this window (see `only_current`).
+  local show_chunk = config.chunk.enabled and (not config.chunk.only_current or state.is_current)
+  local scope_hl = show_chunk and config.chunk.error_hl and has_error(scope) and config.chunk.error_hl
     or config.scope.hl
-  local hl = get_hl(math.floor(scope.indent / state.shiftwidth) + 1, scope_hl)
+  local hl = get_hl(math.floor(indent / state.shiftwidth) + 1, scope_hl)
   local from, to = bounds(scope, state)
   local col = indent - state.leftcol
 
@@ -381,7 +383,7 @@ function M.render_chunk(scope, state)
   end
   local from, to = bounds(scope, state)
   local chunk_hl = config.chunk.error_hl and has_error(scope) and config.chunk.error_hl or config.chunk.hl
-  local hl = get_hl(math.floor(scope.indent / state.shiftwidth) + 1, chunk_hl)
+  local hl = get_hl(math.floor(indent / state.shiftwidth) + 1, chunk_hl)
   local char = config.chunk.char
 
   ---@param l number
